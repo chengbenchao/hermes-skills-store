@@ -1,3 +1,7 @@
+---
+name: debug-pro
+description: "Systematic debugging methodology with 7-step protocol and language-specific debugging commands. Use when diagnosing bugs, errors, or unexpected behavior."
+---
 # debug-pro
 
 Systematic debugging methodology and language-specific debugging commands.
