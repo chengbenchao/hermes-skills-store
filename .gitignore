@@ -1,1 +1,11 @@
+# SkillHub 元数据
+_meta.json
+
+# 只有 SKILL.md 和配套资源有用
+*.lock
+*.log
+
+# 操作系统垃圾
+.DS_Store
+Thumbs.db
 .skills_store_lock.json
