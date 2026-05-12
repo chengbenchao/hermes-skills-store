@@ -1,3 +1,7 @@
+---
+name: data-pipeline
+description: "Composable data transformation, validation, and analysis pipeline engine. Use when building ETL workflows, data processing, or batch analysis tasks."
+---
 # data-pipeline · 数据处理管线引擎
 
 > 可组合的数据转换、验证和分析管线。像搭积木一样处理数据。
