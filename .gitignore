@@ -1,11 +1,20 @@
-# SkillHub 元数据
+# SkillHub 安装残留
 _meta.json
+skills/*/*.js
 
-# 只有 SKILL.md 和配套资源有用
+# 自引用死链（skillhub install 产物）
+skills/debug-companion/debug-companion
+skills/debug-pro/debug-pro
+skills/find-skills/find-skills
+skills/frontend-design/frontend-design
+skills/skill-vetter/skill-vetter
+skills/skillhub-preference/skillhub-preference
+
+# Lock 和日志
 *.lock
 *.log
+.skills_store_lock.json
 
-# 操作系统垃圾
+# OS 垃圾
 .DS_Store
 Thumbs.db
-.skills_store_lock.json
