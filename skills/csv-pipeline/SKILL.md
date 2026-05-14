@@ -141,10 +141,6 @@ def aggregate(rows, group_col, agg_col, func='sum'):
             agg = max(values) if values else 0
         results.append({group_col: name, f'{func}_{agg_col}': str(agg), 'count': str(len(group))})
     return results
-
-# Example: sum revenue by category
-summary = aggregate(data, 'category', 'revenue', 'sum')
-write_csv(summary, 'summary.csv')
 ```
 
 ### Join Datasets
@@ -158,7 +154,6 @@ def inner_join(left, right, on):
         if key not in right_index:
             right_index[key] = []
         right_index[key].append(r)
-
     results = []
     for lr in left:
         key = lr[on]
@@ -182,7 +177,6 @@ def left_join(left, right, on):
             right_index[key] = []
         right_index[key].append(r)
     right_cols.discard(on)
-
     results = []
     for lr in left:
         key = lr[on]
@@ -199,12 +193,6 @@ def left_join(left, right, on):
                 merged[col] = ''
             results.append(merged)
     return results
-
-# Example
-orders = read_csv('orders.csv')
-customers = read_csv('customers.csv')
-joined = left_join(orders, customers, on='customer_id')
-write_csv(joined, 'orders_with_customers.csv')
 ```
 
 ### Deduplicate
@@ -223,9 +211,6 @@ def deduplicate(rows, key_cols=None):
             seen.add(key)
             unique.append(r)
     return unique
-
-# Deduplicate by email column
-clean = deduplicate(data, key_cols=['email'])
 ```
 
 ## Format Conversion
@@ -299,13 +284,10 @@ def clean_csv(rows):
     for r in rows:
         clean_row = {}
         for k, v in r.items():
-            # Strip whitespace from keys and values
             k = k.strip()
             v = v.strip() if isinstance(v, str) else v
-            # Normalize empty values
             if v in ('', 'N/A', 'n/a', 'NA', 'null', 'NULL', 'None', '-'):
                 v = ''
-            # Normalize boolean values
             if v.lower() in ('true', 'yes', '1', 'y'):
                 v = 'true'
             elif v.lower() in ('false', 'no', '0', 'n'):
@@ -319,11 +301,7 @@ def clean_csv(rows):
 
 ```python
 def validate_rows(rows, schema):
-    """
-    Validate rows against a schema.
-    schema: dict of column_name -> 'int'|'float'|'date'|'email'|'str'
-    Returns (valid_rows, error_rows)
-    """
+    """Validate rows against a schema. Returns (valid_rows, error_rows)."""
     import re
     valid, errors = [], []
     for i, r in enumerate(rows):
@@ -333,15 +311,11 @@ def validate_rows(rows, schema):
             if not val:
                 continue
             if dtype == 'int':
-                try:
-                    int(val)
-                except ValueError:
-                    errs.append(f"{col}: '{val}' not int")
+                try: int(val)
+                except ValueError: errs.append(f"{col}: '{val}' not int")
             elif dtype == 'float':
-                try:
-                    float(val)
-                except ValueError:
-                    errs.append(f"{col}: '{val}' not float")
+                try: float(val)
+                except ValueError: errs.append(f"{col}: '{val}' not float")
             elif dtype == 'email':
                 if not re.match(r'^[^@]+@[^@]+\.[^@]+$', val):
                     errs.append(f"{col}: '{val}' not email")
@@ -353,12 +327,6 @@ def validate_rows(rows, schema):
         else:
             valid.append(r)
     return valid, errors
-
-# Usage
-valid, bad = validate_rows(data, {'amount': 'float', 'email': 'email', 'date': 'date'})
-print(f"Valid: {len(valid)}, Errors: {len(bad)}")
-for e in bad[:5]:
-    print(f"  Row {e['row']}: {e['errors']}")
 ```
 
 ## Generating Reports
@@ -369,31 +337,21 @@ for e in bad[:5]:
 def generate_report(data, title, group_col, value_col):
     """Generate a Markdown summary report."""
     lines = [f"# {title}", f"", f"**Total rows**: {len(data)}", ""]
-
-    # Group summary
     groups = group_by(data, group_col)
     lines.append(f"## By {group_col}")
     lines.append("")
     lines.append(f"| {group_col} | Count | Sum | Avg | Min | Max |")
     lines.append("|---|---|---|---|---|---|")
-
     for name in sorted(groups):
         vals = [float(r[value_col]) for r in groups[name] if r[value_col].strip()]
         if vals:
             lines.append(f"| {name} | {len(vals)} | {sum(vals):.2f} | {sum(vals)/len(vals):.2f} | {min(vals):.2f} | {max(vals):.2f} |")
-
     lines.append("")
     lines.append(f"*Generated from {len(data)} rows*")
     return '\n'.join(lines)
-
-report = generate_report(data, "Sales Summary", "category", "revenue")
-with open('report.md', 'w') as f:
-    f.write(report)
 ```
 
 ## Large File Handling
-
-For files too large to load into memory at once:
 
 ```python
 def stream_process(input_path, output_path, transform_fn, delimiter=','):
@@ -405,21 +363,23 @@ def stream_process(input_path, output_path, transform_fn, delimiter=','):
         for row in reader:
             result = transform_fn(row)
             if result is None:
-                continue  # Skip row
+                continue
             if writer is None:
                 writer = csv.DictWriter(fout, fieldnames=result.keys(), delimiter=delimiter)
                 writer.writeheader()
             writer.writerow(result)
-
-# Example: filter and transform in streaming fashion
-def process_row(row):
-    if float(row.get('amount', 0) or 0) < 10:
-        return None  # Skip small amounts
-    row['amount_usd'] = str(float(row['amount']) * 1.0)  # Add computed field
-    return row
-
-stream_process('big_file.csv', 'output.csv', process_row)
 ```
+
+## Production Patterns
+
+For building a multi-source CSV ingestion layer that unifies heterogeneous feeds into a single queryable store, use the **DataWarehouse pattern** — see [`references/warehouse-pattern.md`](references/warehouse-pattern.md).
+
+Key additions beyond standalone scripts:
+- Schema-on-read validation with error collection (not fail-fast)
+- Chainable DataFrame API (filter → select → sort → limit)
+- Natural-key dedup (composite business key, not row hash)
+- Streaming multi-format export (CSV/JSON/JSONL)
+- CLI subcommands (stats / query / aggregate / export)
 
 ## Tips
 
